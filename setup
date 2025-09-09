@@ -4,9 +4,9 @@
 set -euo pipefail
 
 if [[ "$(uname)" == "Darwin" ]]; then
-    script_path="/Users/alice/migrate/run.py"
+    script_path="/Users/alice/setup/main.py"
 else
-    script_path="/home/alice/migrate/run.py"
+    script_path="/home/alice/setup/main.py"
 fi
 
 if [[ ! -f "$script_path" ]]; then

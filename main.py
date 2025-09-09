@@ -62,10 +62,10 @@ from typing import Iterable, List, Tuple, Callable, Optional
 from dataclasses import dataclass
 
 
-from filesystem import build_rules, process_rules, _is_relative_to, copy_dir, copy_file
-from dependencies import install_all_tool_dependencies, install_homebrew_post_copy, run_apt_cleanup
-from network import check_internet_connection, has_wifi_connection
-from utils import parse_args, setup_logging, add_file_handler
+from internal.filesystem import build_rules, process_rules, _is_relative_to, copy_dir, copy_file
+from internal.dependencies import install_all_tool_dependencies, install_homebrew_post_copy, run_apt_cleanup
+from internal.network import check_internet_connection, has_wifi_connection
+from internal.utils import parse_args, setup_logging, add_file_handler
 
 def main(argv: Iterable[str]) -> int:
     logger = setup_logging()

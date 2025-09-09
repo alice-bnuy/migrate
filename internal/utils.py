@@ -4,7 +4,7 @@ import subprocess
 from pathlib import Path
 from typing import Iterable, Optional
 
-from filesystem import DEFAULT_SOURCES
+from .filesystem import DEFAULT_SOURCES
 
 
 def setup_logging(level: str = "INFO") -> logging.Logger:

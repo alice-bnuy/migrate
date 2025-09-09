@@ -7,8 +7,8 @@ import subprocess
 import platform
 import logging
 import os
-from utils import run_bash, append_line_if_missing, append_linuxbrew_block_if_missing
-from network import install_bcmwl_drivers, check_internet_connection
+from .utils import run_bash, append_line_if_missing, append_linuxbrew_block_if_missing
+from .network import install_bcmwl_drivers, check_internet_connection
 
 logger = logging.getLogger(__name__)
 
