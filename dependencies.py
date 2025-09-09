@@ -5,8 +5,38 @@ from typing import Optional
 import shutil
 import subprocess
 import platform
+import logging
 from utils import run_bash, append_line_if_missing, append_linuxbrew_block_if_missing
-from network import install_mac_drivers
+from network import install_mac_drivers, check_internet_connection
+
+logger = logging.getLogger(__name__)
+
+def apt_package_available(package: str) -> bool:
+    """
+    Verifica se um pacote está disponível no repositório apt.
+    Retorna True se disponível, False caso contrário.
+    Só faz sentido em sistemas Linux.
+    """
+    if platform.system() != "Linux":
+        # Para não-Linux (ex: Darwin), sempre retorna True (não faz sentido checar apt)
+        return True
+    try:
+        result = subprocess.run(
+            ["apt-cache", "policy", package],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+        # Se encontrar 'Candidate:' com valor diferente de (none), está disponível
+        for line in result.stdout.splitlines():
+            if line.strip().startswith("Candidate:"):
+                if "(none)" not in line:
+                    return True
+        return False
+    except Exception as e:
+        logger.warning(f"Falha ao checar disponibilidade do pacote {package}: {e}")
+        return False
 
 def brew_exists() -> bool:
     return which_brew() is not None
@@ -28,12 +58,9 @@ def which_brew() -> Optional[Path]:
 
 def install_brew_dependencies(dry_run: bool) -> int:
     """
-    Installs required dependencies for Homebrew on Linux (Debian/Ubuntu/Elementary OS).
-    Returns number of errors (0 = success).
+    Instala dependências necessárias para o Homebrew no Linux (Debian/Ubuntu/Elementary OS).
+    Retorna número de erros (0 = sucesso).
     """
-    import shutil
-    import platform
-
     if platform.system() != "Linux":
         return 0
 
@@ -50,30 +77,52 @@ def install_brew_dependencies(dry_run: bool) -> int:
         "ca-certificates",
         "python3"
     ]
-    cmd = f"sudo apt-get update && sudo apt-get install -y {' '.join(deps)}"
+    available_deps = []
+    missing_deps = []
+    if platform.system() == "Linux":
+        for dep in deps:
+            if apt_package_available(dep):
+                available_deps.append(dep)
+            else:
+                missing_deps.append(dep)
+                logger.warning(f"Dependência '{dep}' não está disponível no repositório apt e será ignorada.")
+
+        if not available_deps:
+            logger.error("Nenhuma dependência do Homebrew está disponível para instalação via apt.")
+            return 1
+    else:
+        available_deps = deps
+
+    cmd = f"sudo apt-get update && sudo apt-get install -y {' '.join(available_deps)}"
     if dry_run:
         print(f"[DRY-RUN] Would run: {cmd}")
         return 0
 
-    logger.info("Installing Homebrew dependencies via apt-get...")
+    logger.info("Instalando dependências do Homebrew via apt-get...")
     try:
         rc = subprocess.call(cmd, shell=True)
     except Exception as e:
-        logger.error("Failed to run apt-get for Homebrew dependencies: %s", e)
+        logger.error("Falha ao rodar apt-get para dependências do Homebrew: %s", e)
         return 1
     if rc != 0:
-        logger.error("Failed to install Homebrew dependencies.")
+        logger.error("Falha ao instalar dependências do Homebrew.")
         return 1
-    logger.info("Homebrew dependencies installed.")
+    logger.info("Dependências do Homebrew instaladas.")
     return 0
 
 
 def install_all_tool_dependencies(dry_run: bool) -> int:
     """
-    Installs dependencies for all tools that will be installed after copy.
-    Returns number of errors (0 = success).
+    Instala dependências para todas as ferramentas que serão instaladas após o copy.
+    Retorna o número de erros (0 = sucesso).
     """
     errors = 0
+
+    # Checa conexão antes de instalar dependências
+    if not check_internet_connection():
+        print("Erro: Sem conexão com a internet. Não é possível instalar dependências.")
+        return 1
+
     # Add more tool dependency installers here as needed
     try:
         errors += install_mac_drivers(dry_run)

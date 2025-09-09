@@ -67,25 +67,47 @@ def install_mac_drivers(dry_run: bool) -> int:
         logger.warning("apt-get not found. Cannot install Mac drivers.")
         return 1
 
+    # Só faz sentido checar drivers no Linux
+    drivers = [
+        "bcmwl-kernel-source",
+        "broadcom-sta-dkms",
+        "broadcom-sta-source",
+    ]
+    available_drivers = drivers
+    if platform.system() == "Linux":
+        from dependencies import apt_package_available
+        available_drivers = []
+        missing_drivers = []
+        for drv in drivers:
+            if apt_package_available(drv):
+                available_drivers.append(drv)
+            else:
+                missing_drivers.append(drv)
+                logger.warning(f"Driver '{drv}' não está disponível no repositório apt e será ignorado.")
+
+        if not available_drivers:
+            logger.error("Nenhum driver Broadcom/Mac está disponível para instalação via apt.")
+            return 1
+
     cmds = [
         "sudo apt-get update",
-        "sudo apt-get install -y bcmwl-kernel-source broadcom-sta-dkms broadcom-sta-source",
+        f"sudo apt-get install -y {' '.join(available_drivers)}",
     ]
     cmd = " && ".join(cmds)
     if dry_run:
         logger.info("[DRY-RUN] Would run: %s", cmd)
         return 0
 
-    logger.info("Installing Mac-specific drivers (Broadcom Wi‑Fi, etc)...")
+    logger.info("Instalando drivers específicos de Mac (Broadcom Wi‑Fi, etc)...")
     try:
         rc = subprocess.call(cmd, shell=True)
     except Exception as e:
-        logger.error("Failed to run apt-get for Mac drivers: %s", e)
+        logger.error("Falha ao rodar apt-get para drivers Mac: %s", e)
         return 1
 
     if rc != 0:
-        logger.error("Failed to install Mac drivers. Exit code: %s", rc)
+        logger.error("Falha ao instalar drivers Mac. Exit code: %s", rc)
         return 1
 
-    logger.info("Mac drivers installed.")
+    logger.info("Drivers Mac instalados.")
     return 0
