@@ -5,9 +5,9 @@ set -Eeuo pipefail
 IFS=$'\n\t'
 
 if [[ "$(uname)" == "Darwin" ]]; then
-    script_path="/Users/alice/setup/python/main.py"
+    script_path="/Users/alice/setup/main.py"
 else
-    script_path="/home/alice/setup/python/main.py"
+    script_path="/home/alice/setup/main.py"
 fi
 
 if [[ ! -f "$script_path" ]]; then
