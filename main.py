@@ -13,6 +13,7 @@ Default items to copy from /home/alice:
 - .zshrc
 - .gitconfig
 - .config/zed
+- github.com
 
 Additionally, the following fonts will be copied:
 - "Fira Code" font directory: /usr/share/fonts/Fira Code
@@ -147,6 +148,9 @@ def main(argv: Iterable[str]) -> int:
         add_file_handler(dest_root / "migrate.log")
 
         sources = [s.strip() for s in args.sources.split(",") if s.strip()]
+        # Include ~/github.com when present
+        if (home / "github.com").exists() and "github.com" not in sources:
+            sources.append("github.com")
 
         # Sanity check: avoid copying destination into itself by mistake
         if _is_relative_to(script_dir, home):
