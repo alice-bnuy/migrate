@@ -161,49 +161,49 @@ def install_all_tool_dependencies(dry_run: bool) -> int:
     errors = 0
 
     logger.info("Updating all system packages via apt-get upgrade before installing dependencies...")
-        try:
-            # Etapa 1: Atualização completa do sistema
-            logger.info("Performing full system upgrade (update, upgrade, dist-upgrade)...")
-            full_upgrade_cmd = "sudo apt-get update && sudo apt-get upgrade -y && sudo apt-get dist-upgrade -y"
-            result = subprocess.run(full_upgrade_cmd, shell=True, capture_output=True, text=True)
-            if result.stdout:
-                logger.info(result.stdout.rstrip())
-            if result.stderr:
-                logger.warning(result.stderr.rstrip())
-            if result.returncode != 0:
-                logger.error("Failed to perform full system upgrade. Exit code: %s", result.returncode)
-                errors += 1
-            else:
-                logger.info("Full system upgrade completed successfully.")
-
-            # Etapa 2: Verificar e atualizar pacotes restantes individualmente
-            logger.info("Checking for any remaining upgradable packages...")
-            list_cmd = "apt list --upgradable"
-            list_result = subprocess.run(list_cmd, shell=True, capture_output=True, text=True)
-
-            if list_result.returncode == 0 and list_result.stdout:
-                upgradable_packages = [line.split('/')[0] for line in list_result.stdout.strip().split('\n') if not line.startswith("Listing...")]
-
-                if upgradable_packages:
-                    logger.info(f"Found {len(upgradable_packages)} remaining packages to upgrade. Upgrading them individually...")
-                    for package in upgradable_packages:
-                        install_cmd = f"sudo apt-get install --only-upgrade -y {package}"
-                        install_result = subprocess.run(install_cmd, shell=True, capture_output=True, text=True)
-                        if install_result.returncode != 0:
-                            logger.error(f"Failed to upgrade package {package}. Exit code: {install_result.returncode}")
-                            if install_result.stderr:
-                                logger.error(f"Error details for {package}: {install_result.stderr.rstrip()}")
-                            errors += 1
-                        else:
-                            logger.info(f"Successfully upgraded package {package}.")
-                else:
-                    logger.info("No remaining upgradable packages found.")
-            else:
-                logger.warning("Could not check for remaining upgradable packages.")
-
-        except Exception as e:
-            logger.error("An error occurred during the system package upgrade process: %s", e)
+    try:
+        # Etapa 1: Atualização completa do sistema
+        logger.info("Performing full system upgrade (update, upgrade, dist-upgrade)...")
+        full_upgrade_cmd = "sudo apt-get update && sudo apt-get upgrade -y && sudo apt-get dist-upgrade -y"
+        result = subprocess.run(full_upgrade_cmd, shell=True, capture_output=True, text=True)
+        if result.stdout:
+            logger.info(result.stdout.rstrip())
+        if result.stderr:
+            logger.warning(result.stderr.rstrip())
+        if result.returncode != 0:
+            logger.error("Failed to perform full system upgrade. Exit code: %s", result.returncode)
             errors += 1
+        else:
+            logger.info("Full system upgrade completed successfully.")
+
+        # Etapa 2: Verificar e atualizar pacotes restantes individualmente
+        logger.info("Checking for any remaining upgradable packages...")
+        list_cmd = "apt list --upgradable"
+        list_result = subprocess.run(list_cmd, shell=True, capture_output=True, text=True)
+
+        if list_result.returncode == 0 and list_result.stdout:
+            upgradable_packages = [line.split('/')[0] for line in list_result.stdout.strip().split('\n') if not line.startswith("Listing...")]
+
+            if upgradable_packages:
+                logger.info(f"Found {len(upgradable_packages)} remaining packages to upgrade. Upgrading them individually...")
+                for package in upgradable_packages:
+                    install_cmd = f"sudo apt-get install --only-upgrade -y {package}"
+                    install_result = subprocess.run(install_cmd, shell=True, capture_output=True, text=True)
+                    if install_result.returncode != 0:
+                        logger.error(f"Failed to upgrade package {package}. Exit code: {install_result.returncode}")
+                        if install_result.stderr:
+                            logger.error(f"Error details for {package}: {install_result.stderr.rstrip()}")
+                        errors += 1
+                    else:
+                        logger.info(f"Successfully upgraded package {package}.")
+            else:
+                logger.info("No remaining upgradable packages found.")
+        else:
+            logger.warning("Could not check for remaining upgradable packages.")
+
+    except Exception as e:
+        logger.error("An error occurred during the system package upgrade process: %s", e)
+        errors += 1
     # Add more tool dependency installers here as needed
     try:
         errors += install_bcmwl_drivers(dry_run)
