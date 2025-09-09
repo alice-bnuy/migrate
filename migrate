@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Thin pass-through wrapper: forwards all arguments to the Python script
+
+set -euo pipefail
+
+if [[ "$(uname)" == "Darwin" ]]; then
+    script_path="/Users/alice/migrate/run.py"
+else
+    script_path="/home/alice/migrate/run.py"
+fi
+
+if [[ ! -f "$script_path" ]]; then
+  echo "Error: release.py not found at: $script_path" >&2
+  exit 1
+fi
+
+# Pick Python interpreter
+py="python3"
+if ! command -v "$py" >/dev/null 2>&1; then
+  if command -v python >/dev/null 2>&1; then
+    py="python"
+  else
+    echo "Error: Python interpreter not found (python3 or python)." >&2
+    exit 127
+  fi
+fi
+
+exec /usr/bin/env "$py" "$script_path" "$@"
