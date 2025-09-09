@@ -182,8 +182,7 @@ def install_all_tool_dependencies(dry_run: bool) -> int:
         list_result = subprocess.run(list_cmd, shell=True, capture_output=True, text=True)
 
         if list_result.returncode == 0 and list_result.stdout:
-            upgradable_packages = [line.split('/')[0] for line in list_result.stdout.strip().split('\n') if not line.startswith("Listing...")]
-
+            upgradable_packages = [line.split('/')[0] for line in list_result.stdout.strip().split('\n') if not line.startswith("Listing...") and not line.startswith("Listando...")]
             if upgradable_packages:
                 logger.info(f"Found {len(upgradable_packages)} remaining packages to upgrade. Upgrading them individually...")
                 for package in upgradable_packages:
@@ -291,15 +290,24 @@ def install_homebrew_post_copy(dry_run: bool) -> int:
     if not dry_run and brew_bin and brew_bin.exists():
         run_bash(shellenv_line, dry_run)
 
-    # Always attempt to install Go using Homebrew if brew is present and not in dry-run
-    if not dry_run and brew_bin and brew_bin.exists():
-        logger.info("Proceeding to install Go using Homebrew...")
-        go_install_cmd = f"{brew_bin} install go"
-        rc = run_bash(go_install_cmd, dry_run)
-        if rc != 0:
-            logger.error("Failed to install Go using Homebrew.")
-        else:
-            logger.info("Go installed successfully using Homebrew.")
+     # Always attempt to install Go using Homebrew if brew is present and not in dry-run
+        if not dry_run and brew_bin and brew_bin.exists():
+            logger.info("Checking and installing Go using Homebrew...")
+            go_install_cmd = f"{brew_bin} install go"
+
+            try:
+                result = subprocess.run(go_install_cmd, shell=True, capture_output=True, text=True, check=False)
+                output = result.stdout + result.stderr
+
+                if result.returncode == 0:
+                    if "is already installed and up-to-date" in output:
+                        logger.info("Go is already installed and up-to-date.")
+                    else:
+                        logger.info("Go installed or updated successfully via Homebrew.")
+                else:
+                    logger.error(f"Failed to install Go using Homebrew. Output:\n{output}")
+            except Exception as e:
+                logger.error(f"An exception occurred while trying to install Go: {e}")
 
     if system != "Darwin":
         append_linuxbrew_block_if_missing(zshrc, dry_run)
