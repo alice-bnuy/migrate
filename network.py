@@ -54,7 +54,7 @@ def has_wifi_connection() -> bool:
         return False
 
 
-def install_mac_drivers(dry_run: bool) -> int:
+def install_bcmwl_drivers(dry_run: bool) -> int:
     """
     Installs drivers commonly needed for Macs running Linux (Broadcom Wi‑Fi, etc).
     Returns number of errors (0 = success).
@@ -63,51 +63,47 @@ def install_mac_drivers(dry_run: bool) -> int:
         logger.info("Mac driver install skipped (not Linux).")
         return 0
 
-    if not shutil.which("apt-get"):
-        logger.warning("apt-get not found. Cannot install Mac drivers.")
-        return 1
+
 
     # Só faz sentido checar drivers no Linux
-    drivers = [
-        "bcmwl-kernel-source",
-        "broadcom-sta-dkms",
-        "broadcom-sta-source",
-    ]
-    available_drivers = drivers
-    if platform.system() == "Linux":
-        from dependencies import apt_package_available
-        available_drivers = []
-        missing_drivers = []
-        for drv in drivers:
-            if apt_package_available(drv):
-                available_drivers.append(drv)
-            else:
-                missing_drivers.append(drv)
-                logger.warning(f"Driver '{drv}' não está disponível no repositório apt e será ignorado.")
+    # Only attempt to install the main Broadcom Wi-Fi driver for network
+    driver_pkg = "bcmwl-kernel-source"
 
-        if not available_drivers:
-            logger.error("Nenhum driver Broadcom/Mac está disponível para instalação via apt.")
-            return 1
 
-    cmds = [
-        "sudo apt-get update",
-        f"sudo apt-get install -y {' '.join(available_drivers)}",
-    ]
-    cmd = " && ".join(cmds)
+    cmd = f"sudo apt-get install -y {driver_pkg}"
     if dry_run:
         logger.info("[DRY-RUN] Would run: %s", cmd)
         return 0
 
-    logger.info("Instalando drivers específicos de Mac (Broadcom Wi‑Fi, etc)...")
+    logger.info("Installing Mac-specific drivers (Broadcom Wi-Fi, etc)...")
     try:
-        rc = subprocess.call(cmd, shell=True)
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        apt_out = (result.stdout or "") + "\n" + (result.stderr or "")
+        installed = False
+        already = False
+        failed = False
+        # Parse apt output for package status
+        if "Setting up bcmwl-kernel-source" in apt_out or "Unpacking bcmwl-kernel-source" in apt_out:
+            installed = True
+        elif "bcmwl-kernel-source is already the newest version" in apt_out or "bcmwl-kernel-source is already installed" in apt_out:
+            already = True
+        elif "Unable to locate package bcmwl-kernel-source" in apt_out or "E: Package 'bcmwl-kernel-source' has no installation candidate" in apt_out:
+            failed = True
+        if installed:
+            logger.info("bcmwl-kernel-source was newly installed.")
+        if already:
+            logger.info("bcmwl-kernel-source was already installed.")
+        if failed:
+            logger.error("bcmwl-kernel-source failed to install or was not found.")
+        if result.stdout:
+            logger.info(result.stdout.rstrip())
+        if result.stderr:
+            logger.warning(result.stderr.rstrip())
+        if result.returncode != 0:
+            logger.error("Failed to install bcmwl-kernel-source. Exit code: %s", result.returncode)
+            return 1
+        logger.info("bcmwl-kernel-source installation step finished.")
+        return 0
     except Exception as e:
-        logger.error("Falha ao rodar apt-get para drivers Mac: %s", e)
+        logger.error("Failed to run apt for bcmwl-kernel-source: %s", e)
         return 1
-
-    if rc != 0:
-        logger.error("Falha ao instalar drivers Mac. Exit code: %s", rc)
-        return 1
-
-    logger.info("Drivers Mac instalados.")
-    return 0

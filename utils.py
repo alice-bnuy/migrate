@@ -127,6 +127,18 @@ def parse_args(argv: Iterable[str]) -> argparse.Namespace:
         action="store_true",
         help="If the destination exists, continue by merging contents (no deletion).",
     )
+    parser.add_argument(
+        "--non-interactive",
+        "--yes",
+        dest="non_interactive",
+        action="store_true",
+        help="Run without prompts; if destination exists, create a new timestamped directory unless --force-dest is set.",
+    )
+    parser.add_argument(
+        "--label",
+        default=None,
+        help="Custom label for the backup directory name (combined with timestamp when applicable).",
+    )
     return parser.parse_args(list(argv))
 
 

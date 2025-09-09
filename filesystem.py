@@ -144,6 +144,7 @@ class Rule:
     base_dir: Optional[Path] = None  # para kind == "filter"
     match_exts: Tuple[str, ...] = ()  # para kind == "filter"
     name_predicate: Optional[Callable[[str], bool]] = None  # para kind == "filter"
+    dst_absolute: Optional[Path] = None  # se definido, normaliza o destino para este caminho absoluto
     description: str = ""  # opcional, apenas para logs futuros
 
 
@@ -155,6 +156,33 @@ def build_rules(home: Path, sources: List[str]) -> List[Rule]:
 
     # Rules for HOME items (/home/alice/...)
     for rel in (s.strip() for s in sources if s.strip()):
+        rel_lower = rel.lower()
+        if rel_lower in ("documents", "documentos"):
+            cand_docs = (home / "Documents").resolve()
+            cand_documentos = (home / "Documentos").resolve()
+            chosen = cand_docs if cand_docs.exists() else (cand_documentos if cand_documentos.exists() else cand_docs)
+            rules.append(
+                Rule(
+                    kind="path",
+                    src=chosen,
+                    dst_absolute=(home / "Documents").resolve(),
+                    description=f"{chosen}",
+                )
+            )
+            continue
+        if rel_lower in ("pictures", "imagens"):
+            cand_pics = (home / "Pictures").resolve()
+            cand_imagens = (home / "Imagens").resolve()
+            chosen = cand_pics if cand_pics.exists() else (cand_imagens if cand_imagens.exists() else cand_pics)
+            rules.append(
+                Rule(
+                    kind="path",
+                    src=chosen,
+                    dst_absolute=(home / "Pictures").resolve(),
+                    description=f"{chosen}",
+                )
+            )
+            continue
         rules.append(
             Rule(
                 kind="path",
@@ -215,7 +243,8 @@ def process_rule(rule: Rule, dest_root: Path, dry_run: bool) -> Tuple[int, int]:
             return 0, 0
 
         try:
-            dst = dest_for_src(src, dest_root)
+            map_src = rule.dst_absolute if rule.dst_absolute is not None else src
+            dst = dest_for_src(map_src, dest_root)
             if src.is_dir():
                 copy_dir(src, dst, dry_run=dry_run, symlinks=True)
                 return 1, 0
@@ -226,7 +255,7 @@ def process_rule(rule: Rule, dest_root: Path, dry_run: bool) -> Tuple[int, int]:
                 print(f"[WARN] Unsupported entry type, skipping: {src}")
                 return 0, 0
         except Exception as e:
-            print(f"[ERROR] Failed to copy {src} -> {dest_for_src(src, dest_root)}: {e}")
+            print(f"[ERROR] Failed to copy {src} -> {dest_for_src(rule.dst_absolute if rule.dst_absolute is not None else src, dest_root)}: {e}")
             return 0, 1
 
     if rule.kind == "filter":
