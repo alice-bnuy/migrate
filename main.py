@@ -186,16 +186,7 @@ def main(argv: Iterable[str]) -> int:
         rules = build_rules(home, sources)
         processed_total, errors = process_rules(rules, dest_root, args.dry_run)
 
-        # Post-copy: tentar executar e registrar logs (sem bloquear por falta de internet)
-        logger.info("===== Post-copy: Installing Tool Dependencies =====")
-        dep_errs = install_all_tool_dependencies(args.dry_run)
-        errors += dep_errs
 
-        logger.info("===== Post-copy: Homebrew Installation =====")
-        brew_errs = install_homebrew_post_copy(args.dry_run)
-        errors += brew_errs
-        logger.info("===== Apt cleanup =====")
-        run_apt_cleanup()
 
         logger.info("===== Summary =====")
         logger.info("Final destination: %s", dest_root)
@@ -268,16 +259,7 @@ def main(argv: Iterable[str]) -> int:
                 logger.error("Failed to restore %s -> %s: %s", src, dst, e)
                 errors += 1
 
-        # Post-restore: always try and log (do not block on missing internet)
-        logger.info("===== Post-restore: Installing Tool Dependencies =====")
-        dep_errs = install_all_tool_dependencies(args.dry_run)
-        errors += dep_errs
 
-        logger.info("===== Post-restore: Homebrew Installation =====")
-        brew_errs = install_homebrew_post_copy(args.dry_run)
-        errors += brew_errs
-        logger.info("===== Apt cleanup =====")
-        run_apt_cleanup()
 
         logger.info("===== Summary =====")
         logger.info("Items processed (top-level entries): %s", processed)
