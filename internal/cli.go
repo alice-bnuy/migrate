@@ -41,6 +41,6 @@ func RunCLI() int {
 
 func printHelp() {
 	fmt.Println("Uso:")
-	fmt.Println("  [binário] create   # Cria backup dos arquivos do sistema em assets/files")
-	fmt.Println("  [binário] apply    # Aplica backup de assets/files para o sistema")
+	fmt.Println("  setup create   # Cria backup dos arquivos do sistema em assets/files")
+	fmt.Println("  setup apply    # Aplica backup de assets/files para o sistema")
 }
