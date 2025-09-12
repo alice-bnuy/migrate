@@ -16,7 +16,7 @@ func RunCLI() int {
 	var cmd string
 
 	if len(os.Args) < 2 {
-		fmt.Println("Nenhum comando fornecido.")
+		fmt.Println("No command provided.")
 		cmd = promptForCommand()
 	} else {
 		cmd = strings.ToLower(os.Args[1])
@@ -46,13 +46,13 @@ func RunCLI() int {
 func promptForCommand() string {
 	reader := bufio.NewReader(os.Stdin)
 	for {
-		fmt.Print("Digite o comando desejado (create/apply): ")
+		fmt.Print("Enter desired command (create/apply): ")
 		input, _ := reader.ReadString('\n')
 		input = strings.TrimSpace(strings.ToLower(input))
 		if input == "create" || input == "apply" {
 			return input
 		}
-		fmt.Println("Comando inválido.")
+		fmt.Println("Invalid command.")
 	}
 }
 

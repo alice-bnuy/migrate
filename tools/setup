@@ -1,7 +1,57 @@
 #!/usr/bin/env nu
 
-let script_path = "/home/alice/setup/bin/setup"
+# Caminho do repositório e do binário
+let repo_path = "/home/alice/setup"
+let binary = $"($repo_path)/bin/setup"
+
+# Função para construir
+def build [] {
+    print "Building project (make build)..."
+    ^make -C $repo_path build
+    if $env.LAST_EXIT_CODE != 0 {
+        error make { msg: "Build failed" }
+    }
+}
+
+# Decide if rebuild is needed comparing only main.go with the binary
+def needs-rebuild [] {
+    if not ($binary | path exists) {
+        return true
+    }
+
+    let bin_mtime = (ls $binary | get modified | first)
+
+    let main_path = $"($repo_path)/main.go"
+    if not ($main_path | path exists) {
+        return false
+    }
+    let main_mtime = (ls $main_path | get modified | first)
+
+    return ($main_mtime > $bin_mtime)
+}
 
 def main [...args] {
-    run-external $script_path ...$args
+    # Flag opcional --force-build
+    mut force = false
+    mut rest = $args
+    if (not ($rest | is-empty)) and ($rest | first) == "--force-build" {
+        $force = true
+        $rest = ($rest | skip 1)
+    }
+
+    if $force {
+        build
+    } else if (needs-rebuild) {
+        build
+    }
+
+    if not ($binary | path exists) {
+        error make { msg: $"Binary not found after build: ($binary)" }
+    }
+
+    # Executa passando argumentos
+    ^$binary ...$rest
+    # Propaga código de saída
+    let code = $env.LAST_EXIT_CODE
+    exit $code
 }
