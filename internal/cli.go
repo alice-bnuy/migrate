@@ -3,6 +3,7 @@ package internal
 import (
 	"fmt"
 	"os"
+	"setup/internal/backup"
 	"strings"
 )
 
@@ -19,14 +20,14 @@ func RunCLI() int {
 	cmd := strings.ToLower(os.Args[1])
 	switch cmd {
 	case "create":
-		if err := createBackup(); err != nil {
+		if err := backup.CreateBackup(); err != nil {
 			fmt.Fprintf(os.Stderr, "Erro ao criar backup: %v\n", err)
 			return 1
 		}
 		fmt.Println("Backup criado com sucesso em assets/files.")
 		return 0
 	case "apply":
-		if err := ApplyBackup(); err != nil {
+		if err := backup.ApplyBackup(); err != nil {
 			fmt.Fprintf(os.Stderr, "Erro ao aplicar backup: %v\n", err)
 			return 1
 		}

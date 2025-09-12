@@ -1,4 +1,4 @@
-package internal
+package backup
 
 // Folders is a slice of Folder structs representing folders and their contents.
 var Folders = []Folder{
