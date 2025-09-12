@@ -1,0 +1,9 @@
+#!/usr/bin/env nu
+
+# Caminho absoluto para o binário que será executado
+let script_path = "/home/alice/setup/bin/setup"
+
+# Função principal: repassa todos os argumentos recebidos para o script Python definido acima
+def main [...args] {
+    .$script_path ...$args
+}
