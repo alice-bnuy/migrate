@@ -9,50 +9,50 @@ import (
 	"strings"
 )
 
-// ApplyBackup restaura os arquivos do backup em setup/assets/files para o sistema operacional,
-// seguindo as direções de write_files.go (Folders, FilesAdd, FilesRemove).
+// ApplyBackup restores files from the backup in setup/assets/files to the operating system,
+// following the directions in write_files.go (Folders, FilesAdd, FilesRemove).
 func ApplyBackup() error {
-	// Restaura arquivos individuais
+	// Restore individual files
 	for _, file := range FilesAdd {
 		if err := restoreFileFromBackup(file.Path, file.Update); err != nil {
-			fmt.Fprintf(os.Stderr, "Erro ao restaurar %s: %v\n", file.Path, err)
+			fmt.Fprintf(os.Stderr, "Error restoring %s: %v\n", file.Path, err)
 		}
 	}
 
-	// Restaura arquivos dentro das pastas
+	// Restore files inside folders
 	for _, folder := range Folders {
 		for _, content := range folder.Contents {
 			orig := filepath.Join(folder.Path, content)
 			if err := restoreFileFromBackup(orig, true); err != nil {
-				fmt.Fprintf(os.Stderr, "Erro ao restaurar %s: %v\n", orig, err)
+				fmt.Fprintf(os.Stderr, "Error restoring %s: %v\n", orig, err)
 			}
 		}
 	}
 
-	// Remove arquivos conforme FilesRemove
+	// Remove files as specified in FilesRemove
 	for _, path := range FilesRemove {
 		expanded, err := utils.ExpandHome(path)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Erro ao expandir %s: %v\n", path, err)
+			fmt.Fprintf(os.Stderr, "Error expanding %s: %v\n", path, err)
 			continue
 		}
 		if err := os.RemoveAll(expanded); err != nil && !os.IsNotExist(err) {
-			fmt.Fprintf(os.Stderr, "Erro ao remover %s: %v\n", expanded, err)
+			fmt.Fprintf(os.Stderr, "Error removing %s: %v\n", expanded, err)
 		}
 	}
 
 	return nil
 }
 
-// restoreFileFromBackup copia um arquivo do backup (assets/files) para o local original no OS.
-// Se update for false e o arquivo já existir, não sobrescreve.
+// restoreFileFromBackup copies a file from the backup (assets/files) to its original location in the OS.
+// If update is false and the file already exists, it does not overwrite.
 func restoreFileFromBackup(origPath string, update bool) error {
 	expanded, err := utils.ExpandHome(origPath)
 	if err != nil {
 		return err
 	}
 
-	// Remove o "/" inicial para evitar problemas com filepath.Join
+	// Remove the initial "/" to avoid issues with filepath.Join
 	relPath := strings.TrimPrefix(expanded, "/")
 	backupPath := filepath.Join("setup/assets/files", relPath)
 
@@ -61,12 +61,12 @@ func restoreFileFromBackup(origPath string, update bool) error {
 		return err
 	}
 
-	// Se for diretório, copia recursivamente
+	// If it's a directory, copy recursively
 	if info.IsDir() {
 		return restoreDir(backupPath, expanded, update)
 	}
 
-	// Se não deve atualizar e já existe, não faz nada
+	// If should not update and already exists, do nothing
 	if !update {
 		if _, err := os.Stat(expanded); err == nil {
 			return nil
@@ -76,7 +76,7 @@ func restoreFileFromBackup(origPath string, update bool) error {
 	return restoreFile(backupPath, expanded)
 }
 
-// restoreFile copia um arquivo de src para dst, criando diretórios necessários.
+// restoreFile copies a file from src to dst, creating necessary directories.
 func restoreFile(src, dst string) error {
 	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
 		return err
@@ -100,8 +100,8 @@ func restoreFile(src, dst string) error {
 	return out.Sync()
 }
 
-// restoreDir copia recursivamente um diretório de src para dst.
-// Se update for false, não sobrescreve arquivos existentes.
+// restoreDir recursively copies a directory from src to dst.
+// If update is false, it does not overwrite existing files.
 func restoreDir(src, dst string, update bool) error {
 	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
 		if err != nil {

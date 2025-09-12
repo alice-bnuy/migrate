@@ -1,7 +1,7 @@
 package backup
 
-// createBackup executa o backup dos arquivos e pastas definidos em write_files.go
-// para a pasta setup/assets/files, utilizando a lógica de CopyAllToFiles.
+// CreateBackup executes the backup of files and folders defined in write_files.go
+// to the setup/assets/files folder, using the logic from CopyAllToFiles.
 func CreateBackup() error {
 	return CopyAllToFiles()
 }

@@ -10,24 +10,24 @@ import (
 	"setup/shared/utils"
 )
 
-// Folders, FilesAdd, FilesRemove, Folder, FileAdd devem ser importados de write_files.go
+// Folders, FilesAdd, FilesRemove, Folder, FileAdd should be imported from write_files.go
 
-// CopyAllToFiles copia todos os arquivos e pastas definidos em write_files.go para setup/assets/files,
-// mantendo a estrutura de diretórios como se files fosse o diretório raiz do sistema.
+// CopyAllToFiles copies all files and folders defined in write_files.go to setup/assets/files,
+// keeping the directory structure as if files were the root directory of the system.
 func CopyAllToFiles() error {
-	// Copia arquivos individuais
+	// Copy individual files
 	for _, file := range FilesAdd {
 		if err := copyFileToFiles(file.Path); err != nil {
-			fmt.Fprintf(os.Stderr, "Erro ao copiar %s: %v\n", file.Path, err)
+			fmt.Fprintf(os.Stderr, "Error copying %s: %v\n", file.Path, err)
 		}
 	}
 
-	// Copia arquivos dentro das pastas
+	// Copy files inside folders
 	for _, folder := range Folders {
 		for _, content := range folder.Contents {
 			orig := filepath.Join(folder.Path, content)
 			if err := copyFileToFiles(orig); err != nil {
-				fmt.Fprintf(os.Stderr, "Erro ao copiar %s: %v\n", orig, err)
+				fmt.Fprintf(os.Stderr, "Error copying %s: %v\n", orig, err)
 			}
 		}
 	}
@@ -35,18 +35,18 @@ func CopyAllToFiles() error {
 	return nil
 }
 
-// copyFileToFiles copia um arquivo do sistema para a pasta assets/files, mantendo a estrutura de diretórios raiz.
+// copyFileToFiles copies a file from the system to the assets/files folder, keeping the root directory structure.
 func copyFileToFiles(origPath string) error {
 	expanded, err := utils.ExpandHome(origPath)
 	if err != nil {
 		return err
 	}
 
-	// Remove o "/" inicial para evitar problemas com filepath.Join
+	// Remove the initial "/" to avoid issues with filepath.Join
 	relPath := strings.TrimPrefix(expanded, "/")
 	destPath := filepath.Join("setup/assets/files", relPath)
 
-	// Se for diretório, copia recursivamente
+	// If it's a directory, copy recursively
 	info, err := os.Stat(expanded)
 	if err != nil {
 		return err
@@ -57,7 +57,7 @@ func copyFileToFiles(origPath string) error {
 	return copyFile(expanded, destPath)
 }
 
-// copyFile copia um arquivo de src para dst, criando diretórios necessários.
+// copyFile copies a file from src to dst, creating necessary directories.
 func copyFile(src, dst string) error {
 	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
 		return err
@@ -81,7 +81,7 @@ func copyFile(src, dst string) error {
 	return out.Sync()
 }
 
-// copyDir copia recursivamente um diretório de src para dst.
+// copyDir recursively copies a directory from src to dst.
 func copyDir(src, dst string) error {
 	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
