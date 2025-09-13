@@ -61,6 +61,14 @@ func CreateBackup() error {
 	}
 
 	fmt.Printf("Backup created: %s\n", archivePath)
+
+	// Upload to Google Drive
+	if err := UploadToDrive(archivePath, "linux/backups/"+archiveName); err != nil {
+		return fmt.Errorf("failed to upload backup to Google Drive: %w", err)
+	}
+	fmt.Printf("Backup uploaded to Google Drive: linux/backups/%s\n", archiveName)
+
+	// (No longer removing local backups directory after upload)
 	return nil
 }
 

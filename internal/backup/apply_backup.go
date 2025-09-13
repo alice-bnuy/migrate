@@ -12,6 +12,7 @@ import (
 
 // ApplyBackup extracts a .tar.xz backup into assets/tmp, applies the backup from tmp as root,
 // excludes the /tmp folder itself, and cleans up tmp after.
+// If backupFile is empty, it will use the most recent .tar.xz backup from Google Drive.
 func ApplyBackup(backupFile string) error {
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -26,8 +27,23 @@ func ApplyBackup(backupFile string) error {
 		return fmt.Errorf("could not create tmp dir: %w", err)
 	}
 
+	// If no backupFile specified, get the most recent from Drive
+	if backupFile == "" {
+		latest, err := GetLatestDriveBackup()
+		if err != nil {
+			return fmt.Errorf("could not find latest backup in Google Drive: %w", err)
+		}
+		backupFile = latest
+	}
+
+	// Download the backup from Google Drive before extracting
+	localPath := filepath.Join(backupsDir, filepath.Base(backupFile))
+	if err := DownloadFromDrive("linux/backups/"+filepath.Base(backupFile), localPath); err != nil {
+		return fmt.Errorf("failed to download backup from Google Drive: %w", err)
+	}
+
 	// Extract the .tar.xz backup into tmpDir
-	if err := extractTarXz(backupFile, tmpDir); err != nil {
+	if err := extractTarXz(localPath, tmpDir); err != nil {
 		return fmt.Errorf("could not extract backup: %w", err)
 	}
 
@@ -53,6 +69,7 @@ func extractTarXz(archivePath, destDir string) error {
 // applyFromTmp walks tmpDir and restores files/folders to their original locations,
 // treating tmpDir as root. Excludes the /tmp folder itself.
 func applyFromTmp(tmpDir string) error {
+	originalsDir := filepath.Join(tmpDir, "originals")
 	return filepath.Walk(tmpDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -64,9 +81,9 @@ func applyFromTmp(tmpDir string) error {
 		if rel == "." {
 			return nil
 		}
-		// Exclude /tmp itself
+		// Exclude /tmp itself and /originals backup folder
 		parts := strings.Split(rel, string(os.PathSeparator))
-		if len(parts) > 0 && parts[0] == "tmp" {
+		if len(parts) > 0 && (parts[0] == "tmp" || parts[0] == "originals") {
 			if info.IsDir() {
 				return filepath.SkipDir
 			}
@@ -76,7 +93,14 @@ func applyFromTmp(tmpDir string) error {
 		if info.IsDir() {
 			return os.MkdirAll(target, info.Mode())
 		}
-		// Copy file
+		// If target exists, back it up to originalsDir before overwriting
+		if _, err := os.Stat(target); err == nil {
+			backupPath := filepath.Join(originalsDir, rel)
+			if err := os.MkdirAll(filepath.Dir(backupPath), 0755); err == nil {
+				_ = utils.CopyFile(target, backupPath, info.Mode())
+			}
+		}
+		// Copy file (overwrite)
 		return utils.CopyFile(path, target, info.Mode())
 	})
 }
