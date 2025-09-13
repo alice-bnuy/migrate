@@ -60,7 +60,7 @@ func RunCLI() int {
 		for i := 3; i < len(os.Args); i++ {
 			if os.Args[i] == "--steps" && i+1 < len(os.Args) {
 				stepsArg := os.Args[i+1]
-				for _, s := range strings.Split(stepsArg, ",") {
+				for _, s := range strings.FieldsFunc(stepsArg, func(r rune) bool { return r == ',' }) {
 					trimmed := strings.TrimSpace(s)
 					if trimmed != "" {
 						steps = append(steps, trimmed)
