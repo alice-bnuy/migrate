@@ -6,14 +6,22 @@ var Folders = []Folder{
 		Path:     "~/Library/Cache/Alice/messages",
 		Contents: []string{"messages.db", "messages.db-shm", "messages.db-wal"},
 	},
+	{
+		Path: "~/setup",
+		Contents: []string{
+			".env",
+			"client_secret_2_601804493169-nh1uc56rqsuco7f2f7saplpjg21tijse.apps.googleusercontent.com.json",
+			"token.json",
+		},
+	},
+	{
+		Path:     "~/.config/zed",
+		Contents: []string{"keymap.json", "prompts/prompts-library-db.0.mdb", "settings.json", "themes/ask-dark+.json"},
+	},
 }
 
 // FilesAdd is a slice of FileAdd structs representing files to add and whether to update them.
 var FilesAdd = []FileAdd{
-	{
-		Path:   "~/Library/Application Support/Alice/preferences/settings.json",
-		Update: true,
-	},
 	{
 		Path:   "~/.config/zed",
 		Update: true,
@@ -32,6 +40,18 @@ var FilesAdd = []FileAdd{
 	},
 	{
 		Path:   "~/.zshrc",
+		Update: true,
+	},
+	{
+		Path:   "~/Library/Application Support/Alice/preferences/settings.json",
+		Update: true,
+	},
+	{
+		Path:   "~/github.com/alice-bnuy/alicebot/.env",
+		Update: true,
+	},
+	{
+		Path:   "~/Desktop/github.com/alice-bnuy/discordcore/.env",
 		Update: true,
 	},
 	{
