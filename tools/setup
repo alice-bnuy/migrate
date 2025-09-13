@@ -16,21 +16,9 @@
 let repo_path = "/home/alice/setup"
 let binary = $"($repo_path)/bin/setup"
 
-# Attempt to build if a `build` command is available (optional)
-def try_build [] {
-    if (which build | is-empty) {
-        return
-    }
-    print "Building project..."
-    ^build
-    if $env.LAST_EXIT_CODE != 0 {
-        error make { msg: "Build failed" }
-    }
-}
-
 def main [ ...args ] {
     # Try building (no error if build tool is absent)
-    try_build
+    build
 
     if not ($binary | path exists) {
         error make { msg: $"Binary not found: ($binary)" }
