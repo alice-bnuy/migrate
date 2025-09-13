@@ -26,8 +26,8 @@ type BackupSet struct {
 	FilesRemove []string
 }
 
-// DefaultBackupSet is the primary full backup configuration.
-var DefaultBackupSet = BackupSet{
+// ConfigurationBackupSet is the primary full backup configuration.
+var ConfigurationBackupSet = BackupSet{
 	Name:        "default",
 	Description: "Full system/home backup",
 	Folders: []Folder{
@@ -44,6 +44,7 @@ var DefaultBackupSet = BackupSet{
 		{Path: "~/.gitconfig", Update: true},
 		{Path: "~/.ssh", Update: true},
 		{Path: "~/setup/.env", Update: true},
+		{Path: "~/.wget-hsts", Update: true},
 		{Path: "~/.XCompose", Update: true},
 		{Path: "~/.zshrc", Update: true},
 		{Path: "~/Desktop/github.com/alice-bnuy/discordcore/.env", Update: true},
@@ -55,6 +56,8 @@ var DefaultBackupSet = BackupSet{
 		"~/.bash_history",
 		"~/.bash_logout",
 		"~/.bashrc",
+		"~/.profile",
+		"~/.sudo_as_admin_successful",
 	},
 }
 
@@ -82,31 +85,136 @@ var AliceBotBackupSet = BackupSet{
 
 // backupSets is an internal registry of available sets by lowercase name.
 var backupSets = map[string]BackupSet{
-	strings.ToLower(DefaultBackupSet.Name):  DefaultBackupSet,
-	strings.ToLower(AliceBotBackupSet.Name): AliceBotBackupSet,
+	strings.ToLower(ConfigurationBackupSet.Name): ConfigurationBackupSet,
+	strings.ToLower(AliceBotBackupSet.Name):      AliceBotBackupSet,
 }
 
-// ActiveBackupSet points to the set currently used by CreateBackup logic.
-// It defaults to DefaultBackupSet to preserve existing behavior unless changed explicitly.
-var ActiveBackupSet = DefaultBackupSet
-
-// The following global slices are maintained for backward compatibility with existing
-// code (e.g., CopyAllToTarget / CopyAllToFiles) that expect these package-level variables.
-// Use UseBackupSet(...) before invoking backup creation to switch context.
+// ActiveBackupSets holds the ordered list of backup sets currently active.
+// By default it contains only the primary configuration set. Functions that
+// modify the active sets must call recomputeActiveSlices() to refresh the
+// merged global slices used by legacy code paths.
 var (
-	Folders     = ActiveBackupSet.Folders
-	FilesAdd    = ActiveBackupSet.FilesAdd
-	FilesRemove = ActiveBackupSet.FilesRemove
+	ActiveBackupSets = []BackupSet{ConfigurationBackupSet}
+	Folders          []Folder
+	FilesAdd         []FileAdd
+	FilesRemove      []string
 )
 
-// UseBackupSet switches the active backup set by name (case-insensitive).
-// If the name is unknown, the call is silently ignored and the previous active set remains.
+// init ensures the merged slices are prepared for the default configuration.
+func init() {
+	recomputeActiveSlices()
+}
+
+// recomputeActiveSlices merges all active backup sets into the legacy global slices.
+// Any duplicate paths (case-insensitive) across FilesAdd, FilesRemove, or Folder paths
+// cause an immediate panic with a descriptive error so that developers must resolve
+// the conflict instead of relying on silent deduplication.
+func recomputeActiveSlices() {
+	var folders []Folder
+	var filesAdd []FileAdd
+	var filesRemove []string
+
+	seenFolder := map[string]struct{}{}
+	seenAdd := map[string]struct{}{}
+	seenRemove := map[string]struct{}{}
+
+	dupFolders := []string{}
+	dupAdd := []string{}
+	dupRemove := []string{}
+
+	recordedFolderDup := map[string]struct{}{}
+	recordedAddDup := map[string]struct{}{}
+	recordedRemoveDup := map[string]struct{}{}
+
+	for _, set := range ActiveBackupSets {
+		// Folders: keep ordering; also detect duplicate folder path usage
+		for _, f := range set.Folders {
+			key := strings.ToLower(f.Path)
+			if _, ok := seenFolder[key]; ok {
+				if _, rec := recordedFolderDup[key]; !rec {
+					dupFolders = append(dupFolders, f.Path)
+					recordedFolderDup[key] = struct{}{}
+				}
+			} else {
+				seenFolder[key] = struct{}{}
+			}
+			folders = append(folders, f)
+		}
+
+		// FilesAdd: detect duplicates by path (case-insensitive)
+		for _, fa := range set.FilesAdd {
+			key := strings.ToLower(fa.Path)
+			if _, ok := seenAdd[key]; ok {
+				if _, rec := recordedAddDup[key]; !rec {
+					dupAdd = append(dupAdd, fa.Path)
+					recordedAddDup[key] = struct{}{}
+				}
+			} else {
+				seenAdd[key] = struct{}{}
+				filesAdd = append(filesAdd, fa)
+			}
+		}
+
+		// FilesRemove: detect duplicates by path (case-insensitive)
+		for _, fr := range set.FilesRemove {
+			key := strings.ToLower(fr)
+			if _, ok := seenRemove[key]; ok {
+				if _, rec := recordedRemoveDup[key]; !rec {
+					dupRemove = append(dupRemove, fr)
+					recordedRemoveDup[key] = struct{}{}
+				}
+			} else {
+				seenRemove[key] = struct{}{}
+				filesRemove = append(filesRemove, fr)
+			}
+		}
+	}
+
+	// If any duplicates detected, panic with descriptive error to force resolution.
+	if len(dupFolders) > 0 || len(dupAdd) > 0 || len(dupRemove) > 0 {
+		var parts []string
+		if len(dupFolders) > 0 {
+			parts = append(parts, "Folders: "+strings.Join(dupFolders, ", "))
+		}
+		if len(dupAdd) > 0 {
+			parts = append(parts, "FilesAdd: "+strings.Join(dupAdd, ", "))
+		}
+		if len(dupRemove) > 0 {
+			parts = append(parts, "FilesRemove: "+strings.Join(dupRemove, ", "))
+		}
+		panic("backup: duplicate paths detected across active backup sets -> " + strings.Join(parts, " | "))
+	}
+
+	Folders = folders
+	FilesAdd = filesAdd
+	FilesRemove = filesRemove
+}
+
+// UseBackupSet resets the active sets to a single named set (case-insensitive).
+// If the name is unknown, the previous active list is left unchanged.
+// NOTE: Any duplicate paths across active sets will trigger a panic during
+// recomputeActiveSlices() to enforce explicit non-duplication.
 func UseBackupSet(name string) {
 	if set, ok := backupSets[strings.ToLower(name)]; ok {
-		ActiveBackupSet = set
-		Folders = ActiveBackupSet.Folders
-		FilesAdd = ActiveBackupSet.FilesAdd
-		FilesRemove = ActiveBackupSet.FilesRemove
+		ActiveBackupSets = []BackupSet{set}
+		recomputeActiveSlices()
+	}
+}
+
+// UseBackupSets sets multiple active backup sets (order matters for folder concatenation).
+// Unknown names are ignored; if none resolve, the current active list is unchanged.
+// NOTE: If any duplicate folder paths, FilesAdd paths, or FilesRemove entries are
+// present across the combined sets, a panic will occur to force resolution.
+func UseBackupSets(names ...string) {
+	var sets []BackupSet
+	for _, name := range names {
+		if set, ok := backupSets[strings.ToLower(name)]; ok {
+			sets = append(sets, set)
+		}
+	}
+	if len(sets) > 0 {
+		ActiveBackupSets = sets
+		recomputeActiveSlices()
 	}
 }
 

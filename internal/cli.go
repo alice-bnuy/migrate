@@ -43,6 +43,13 @@ func RunCLI() int {
 		}
 		return 0
 	case "create":
+		// Check for --alicebot flag
+		for i := 2; i < len(os.Args); i++ {
+			if os.Args[i] == "--alicebot" {
+				backup.UseBackupSet("alicebot")
+				break
+			}
+		}
 		if err := backup.CreateBackup(); err != nil {
 			fmt.Fprintf(os.Stderr, "Error creating backup: %v\n", err)
 			return 1
@@ -115,7 +122,8 @@ func promptForCommand() string {
 
 func printHelp() {
 	fmt.Println("Usage:")
-	fmt.Println("  setup create         # Create a backup of system files in backups")
+	fmt.Println("  setup create [--alicebot] # Create a backup of system files in backups")
+	fmt.Println("                       # Use --alicebot for minimal AliceBot-specific backup")
 	fmt.Println("  setup apply <file> [--steps \"before clone,after clone\"]")
 	fmt.Println("                       # Apply backup from the specified backup file to the system")
 	fmt.Println("                       # Optionally specify steps to apply (comma-separated, e.g. --steps \"before clone\")")

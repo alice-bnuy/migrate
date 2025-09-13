@@ -48,7 +48,7 @@ commands = {
         "gir1.2-gtk-4.0 gpick libadwaita-1-dev libgirepository1.0-dev libglib2.0-dev "
         "libgtk-4-dev libxml2-utils linux-headers-generic mesa-vulkan-drivers  "
         "mesa-vulkan-drivers:i386 meson ninja-build spotify-client "
-        "neofetch vulkan-tools -y &&"
+        "neofetch vulkan-tools zed -y &&"
         "sudo apt build-dep linux -y && "
         "sudo apt remove --purge git -y && "
         "sudo apt autoremove && sudo apt autoclean",

@@ -13,6 +13,12 @@ import (
 
 // CreateBackup copies files/folders to assets/tmp, then archives as .tar.xz in assets with the naming convention,
 // and cleans up the tmp folder.
+//
+// NOTE: This function operates on the merged legacy slices (Folders, FilesAdd, FilesRemove)
+// which are derived from all active backup sets in ActiveBackupSets. To include multiple
+// sets in a single backup, call UseBackupSets(...) (or UseBackupSet for a single one)
+// BEFORE invoking CreateBackup. Folder lists are concatenated in the order provided;
+// FilesAdd and FilesRemove are de-duplicated case-insensitively by path.
 func CreateBackup() error {
 	// Get project root (assume this file is always run from ~/setup or similar)
 	home, err := os.UserHomeDir()
