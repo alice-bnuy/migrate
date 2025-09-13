@@ -24,7 +24,6 @@ func CreateBackup() error {
 
 	// Clean up tmpDir if it exists
 	_ = os.RemoveAll(tmpDir)
-	archivePath := filepath.Join(backupsDir, archiveName)
 
 	// Copy all files/folders to tmpDir (reusing CopyAllToFiles logic, but targeting tmpDir)
 	if err := CopyAllToTarget(tmpDir); err != nil {
@@ -44,7 +43,7 @@ func CreateBackup() error {
 	// Get timestamp for naming
 	timestamp := time.Now().Format("20060102-150405")
 	archiveName := fmt.Sprintf("home-%s-backup-%s.tar.xz", username, timestamp)
-	archivePath := filepath.Join(assetsDir, archiveName)
+	archivePath := filepath.Join(backupsDir, archiveName)
 
 	// Create .tar.xz archive of tmpDir contents (treat tmpDir as root of archive)
 	// The archive should contain the contents of tmpDir, not the tmpDir itself.
