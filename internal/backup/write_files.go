@@ -7,14 +7,6 @@ var Folders = []Folder{
 		Contents: []string{"messages.db", "messages.db-shm", "messages.db-wal"},
 	},
 	{
-		Path: "~/setup",
-		Contents: []string{
-			".env",
-			"credentials/client_secret.json",
-			"credentials/token.json",
-		},
-	},
-	{
 		Path:     "~/.config/zed",
 		Contents: []string{"keymap.json", "prompts/prompts-library-db.0.mdb", "settings.json", "themes/ask-dark+.json"},
 	},
@@ -28,6 +20,10 @@ var FilesAdd = []FileAdd{
 	},
 	{
 		Path:   "~/.ssh",
+		Update: true,
+	},
+	{
+		Path:   "~/setup/.env",
 		Update: true,
 	},
 	{
