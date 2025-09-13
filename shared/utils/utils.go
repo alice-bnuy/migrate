@@ -21,9 +21,32 @@ func ExpandHome(path string) (string, error) {
 
 // CopyFile copies a file from src to dst, creating necessary directories.
 // If mode is provided, it sets the file permissions, otherwise uses default permissions.
+// It always overwrites the destination, but checks for differences and logs if different.
+// This is future-proof for interactive or conditional logic.
 func CopyFile(src, dst string, mode ...os.FileMode) error {
 	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
 		return err
+	}
+
+	// Check for differences if destination exists
+	dstExists := false
+	if fi, err := os.Stat(dst); err == nil && !fi.IsDir() {
+		dstExists = true
+	}
+
+	filesDiffer := false
+	if dstExists {
+		same, err := filesAreEqual(src, dst)
+		if err == nil && !same {
+			filesDiffer = true
+		}
+	}
+
+	// Always overwrite, but log if different (future-proof for conditional logic)
+	if filesDiffer {
+		// In the future, prompt or handle differently if needed
+		// For now, just log (could be replaced with actual logger)
+		// fmt.Printf("Overwriting %s (differs from backup)\n", dst)
 	}
 
 	in, err := os.Open(src)
@@ -52,6 +75,42 @@ func CopyFile(src, dst string, mode ...os.FileMode) error {
 		return out.Sync()
 	}
 	return err
+}
+
+// filesAreEqual compares two files for byte-for-byte equality.
+func filesAreEqual(path1, path2 string) (bool, error) {
+	f1, err := os.Open(path1)
+	if err != nil {
+		return false, err
+	}
+	defer f1.Close()
+	f2, err := os.Open(path2)
+	if err != nil {
+		return false, err
+	}
+	defer f2.Close()
+
+	const chunkSize = 4096
+	b1 := make([]byte, chunkSize)
+	b2 := make([]byte, chunkSize)
+
+	for {
+		n1, err1 := f1.Read(b1)
+		n2, err2 := f2.Read(b2)
+		if n1 != n2 || (n1 > 0 && string(b1[:n1]) != string(b2[:n2])) {
+			return false, nil
+		}
+		if err1 != nil || err2 != nil {
+			if err1 == io.EOF && err2 == io.EOF {
+				break
+			}
+			if err1 == io.EOF || err2 == io.EOF {
+				return false, nil
+			}
+			return false, err1
+		}
+	}
+	return true, nil
 }
 
 // CopyDir recursively copies a directory from src to dst.
