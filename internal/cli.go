@@ -42,7 +42,13 @@ func RunCLI() int {
 		fmt.Println("Backup successfully created in assets/files.")
 		return 0
 	case "apply":
-		if err := backup.ApplyBackup(); err != nil {
+		if len(os.Args) < 3 {
+			fmt.Fprintln(os.Stderr, "Error: No backup file specified for apply command.")
+			fmt.Println("Usage: setup apply <backupfile>")
+			return 1
+		}
+		backupFile := os.Args[2]
+		if err := backup.ApplyBackup(backupFile); err != nil {
 			fmt.Fprintf(os.Stderr, "Error applying backup: %v\n", err)
 			return 1
 		}
@@ -82,7 +88,7 @@ func promptForCommand() string {
 func printHelp() {
 	fmt.Println("Usage:")
 	fmt.Println("  setup create         # Create a backup of system files in assets/files")
-	fmt.Println("  setup apply          # Apply backup from assets/files to the system")
+	fmt.Println("  setup apply <file>   # Apply backup from the specified backup file to the system")
 	fmt.Println("  setup refresh_token  # Obtain Google OAuth refresh token")
 	fmt.Println("  setup oauth_token    # Generate complete OAuth token from refresh token")
 	fmt.Println("  setup --help, -h     # Show this help message")

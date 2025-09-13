@@ -2,7 +2,6 @@ package backup
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -75,51 +74,9 @@ func copyFileToFiles(origPath string) error {
 		return err
 	}
 	if info.IsDir() {
-		return copyDir(expanded, destPath)
+		return utils.CopyDir(expanded, destPath)
 	}
-	return copyFile(expanded, destPath)
-}
-
-// copyFile copies a file from src to dst, creating necessary directories.
-func copyFile(src, dst string) error {
-	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
-		return err
-	}
-	in, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer in.Close()
-
-	out, err := os.Create(dst)
-	if err != nil {
-		return err
-	}
-	defer out.Close()
-
-	_, err = io.Copy(out, in)
-	if err != nil {
-		return err
-	}
-	return out.Sync()
-}
-
-// copyDir recursively copies a directory from src to dst.
-func copyDir(src, dst string) error {
-	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		rel, err := filepath.Rel(src, path)
-		if err != nil {
-			return err
-		}
-		target := filepath.Join(dst, rel)
-		if info.IsDir() {
-			return os.MkdirAll(target, info.Mode())
-		}
-		return copyFile(path, target)
-	})
+	return utils.CopyFile(expanded, destPath)
 }
 
 // isZedConfigDir checks if the given path is ~/.config/zed
@@ -164,6 +121,6 @@ func copyZedConfigDirWithExcludes(src, dst string) error {
 		if info.IsDir() {
 			return os.MkdirAll(target, info.Mode())
 		}
-		return copyFile(path, target)
+		return utils.CopyFile(path, target, info.Mode())
 	})
 }
