@@ -2,56 +2,67 @@ package backup
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"strings"
 
+	"time"
+
+	"github.com/joho/godotenv"
 	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/option"
 )
 
-// getCredentials loads OAuth2 config and token from the repo files.
+// getCredentials loads OAuth2 config and token from environment variables (.env).
 func getCredentials() (*oauth2.Config, *oauth2.Token, error) {
-	repoPath, err := getRepoPath()
+	// Carrega variáveis do .env, se existir
+	_ = godotenv.Load()
+
+	clientID := os.Getenv("GOOGLE_CLIENT_ID")
+	clientSecret := os.Getenv("GOOGLE_CLIENT_SECRET")
+	authURI := os.Getenv("GOOGLE_AUTH_URI")
+	tokenURI := os.Getenv("GOOGLE_TOKEN_URI")
+	redirectURIs := os.Getenv("GOOGLE_REDIRECT_URIS")
+
+	if clientID == "" || clientSecret == "" || authURI == "" || tokenURI == "" || redirectURIs == "" {
+		return nil, nil, fmt.Errorf("alguma variável de ambiente de credencial Google está faltando")
+	}
+
+	config := &oauth2.Config{
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		Scopes:       []string{drive.DriveFileScope},
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  authURI,
+			TokenURL: tokenURI,
+		},
+		RedirectURL: redirectURIs, // Se houver múltiplos, pegue o primeiro
+	}
+
+	accessToken := os.Getenv("GOOGLE_ACCESS_TOKEN")
+	refreshToken := os.Getenv("GOOGLE_REFRESH_TOKEN")
+	tokenType := os.Getenv("GOOGLE_TOKEN_TYPE")
+	expiryStr := os.Getenv("GOOGLE_TOKEN_EXPIRY")
+
+	if accessToken == "" || refreshToken == "" || tokenType == "" || expiryStr == "" {
+		return nil, nil, fmt.Errorf("alguma variável de ambiente de token Google está faltando")
+	}
+
+	expiry, err := time.Parse(time.RFC3339Nano, expiryStr)
 	if err != nil {
-		return nil, nil, err
-	}
-	secretPath := filepath.Join(repoPath, "credentials/client_secret.json")
-	tokenPath := filepath.Join(repoPath, "credentials/token.json")
-
-	secretFile, err := os.Open(secretPath)
-	if err != nil {
-		return nil, nil, fmt.Errorf("unable to open client secret file: %w", err)
-	}
-	defer secretFile.Close()
-
-	secretBytes, err := io.ReadAll(secretFile)
-	if err != nil {
-		return nil, nil, fmt.Errorf("unable to read client secret file: %w", err)
+		return nil, nil, fmt.Errorf("erro ao converter GOOGLE_TOKEN_EXPIRY: %w", err)
 	}
 
-	config, err := google.ConfigFromJSON(secretBytes, drive.DriveFileScope)
-	if err != nil {
-		return nil, nil, fmt.Errorf("unable to parse client secret file to config: %w", err)
+	token := &oauth2.Token{
+		AccessToken:  accessToken,
+		TokenType:    tokenType,
+		RefreshToken: refreshToken,
+		Expiry:       expiry,
 	}
 
-	tokenFile, err := os.Open(tokenPath)
-	if err != nil {
-		return nil, nil, fmt.Errorf("unable to open token file: %w", err)
-	}
-	defer tokenFile.Close()
-
-	var token oauth2.Token
-	if err := json.NewDecoder(tokenFile).Decode(&token); err != nil {
-		return nil, nil, fmt.Errorf("unable to parse token file: %w", err)
-	}
-
-	return config, &token, nil
+	return config, token, nil
 }
 
 // getDriveService authenticates and returns a Drive service client.
