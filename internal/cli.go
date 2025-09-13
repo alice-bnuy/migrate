@@ -6,6 +6,7 @@ import (
 	"os"
 	"setup/internal/auth"
 	"setup/internal/backup"
+	"setup/internal/clone"
 	"strings"
 )
 
@@ -60,6 +61,13 @@ func RunCLI() int {
 			return 1
 		}
 		return 0
+	case "clone":
+		if err := clone.CloneAll(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error cloning repositories: %v\n", err)
+			return 1
+		}
+		fmt.Println("All repositories cloned successfully.")
+		return 0
 	case "oauth_token":
 		if err := auth.RunOAuthTokenFlow(); err != nil {
 			fmt.Fprintf(os.Stderr, "Error generating OAuth token: %v\n", err)
@@ -91,5 +99,6 @@ func printHelp() {
 	fmt.Println("  setup apply <file>   # Apply backup from the specified backup file to the system")
 	fmt.Println("  setup refresh_token  # Obtain Google OAuth refresh token")
 	fmt.Println("  setup oauth_token    # Generate complete OAuth token from refresh token")
+	fmt.Println("  setup clone          # Clone all configured repositories via SSH")
 	fmt.Println("  setup --help, -h     # Show this help message")
 }
