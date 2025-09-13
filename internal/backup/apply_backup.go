@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-// ApplyBackup restores files from the backup in setup/assets/files to the operating system,
+// ApplyBackup restores files from the backup in assets/files to the operating system,
 // following the directions in write_files.go (Folders, FilesAdd, FilesRemove).
 func ApplyBackup() error {
 	// Restore individual files
@@ -52,9 +52,15 @@ func restoreFileFromBackup(origPath string, update bool) error {
 		return err
 	}
 
+	// Get home directory and build absolute path to ~/setup/assets/files
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+
 	// Remove the initial "/" to avoid issues with filepath.Join
 	relPath := strings.TrimPrefix(expanded, "/")
-	backupPath := filepath.Join("setup/assets/files", relPath)
+	backupPath := filepath.Join(home, "setup", "assets", "files", relPath)
 
 	info, err := os.Stat(backupPath)
 	if err != nil {

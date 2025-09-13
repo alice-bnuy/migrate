@@ -12,7 +12,7 @@ import (
 
 // Folders, FilesAdd, FilesRemove, Folder, FileAdd should be imported from write_files.go
 
-// CopyAllToFiles copies all files and folders defined in write_files.go to setup/assets/files,
+// CopyAllToFiles copies all files and folders defined in write_files.go to assets/files,
 // keeping the directory structure as if files were the root directory of the system.
 func CopyAllToFiles() error {
 	// Copy individual files
@@ -42,9 +42,15 @@ func copyFileToFiles(origPath string) error {
 		return err
 	}
 
+	// Get home directory and build absolute path to ~/setup/assets/files
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return err
+	}
+
 	// Remove the initial "/" to avoid issues with filepath.Join
 	relPath := strings.TrimPrefix(expanded, "/")
-	destPath := filepath.Join("setup/assets/files", relPath)
+	destPath := filepath.Join(home, "setup", "assets", "files", relPath)
 
 	// If it's a directory, copy recursively
 	info, err := os.Stat(expanded)
