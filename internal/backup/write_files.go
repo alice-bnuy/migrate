@@ -10,8 +10,8 @@ var Folders = []Folder{
 		Path: "~/setup",
 		Contents: []string{
 			".env",
-			"client_secret_2_601804493169-nh1uc56rqsuco7f2f7saplpjg21tijse.apps.googleusercontent.com.json",
-			"token.json",
+			"credentials/client_secret.json",
+			"credentials/token.json",
 		},
 	},
 	{
@@ -23,31 +23,19 @@ var Folders = []Folder{
 // FilesAdd is a slice of FileAdd structs representing files to add and whether to update them.
 var FilesAdd = []FileAdd{
 	{
-		Path:   "~/.config/zed",
-		Update: true,
-	},
-	{
 		Path:   "~/.gitconfig",
-		Update: false,
+		Update: true,
 	},
 	{
 		Path:   "~/.ssh",
-		Update: false,
+		Update: true,
 	},
 	{
 		Path:   "~/.XCompose",
-		Update: false,
+		Update: true,
 	},
 	{
 		Path:   "~/.zshrc",
-		Update: true,
-	},
-	{
-		Path:   "~/Library/Application Support/Alice/preferences/settings.json",
-		Update: true,
-	},
-	{
-		Path:   "~/github.com/alice-bnuy/alicebot/.env",
 		Update: true,
 	},
 	{
@@ -55,8 +43,16 @@ var FilesAdd = []FileAdd{
 		Update: true,
 	},
 	{
+		Path:   "~/github.com/alice-bnuy/alicebot/.env",
+		Update: true,
+	},
+	{
+		Path:   "~/Library/Application Support/Alice/preferences/settings.json",
+		Update: true,
+	},
+	{
 		Path:   "/etc/prime-discrete",
-		Update: false,
+		Update: true,
 	},
 }
 

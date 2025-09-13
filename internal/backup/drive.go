@@ -21,8 +21,8 @@ func getCredentials() (*oauth2.Config, *oauth2.Token, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	secretPath := filepath.Join(repoPath, "client_secret_2_601804493169-nh1uc56rqsuco7f2f7saplpjg21tijse.apps.googleusercontent.com.json")
-	tokenPath := filepath.Join(repoPath, "token.json")
+	secretPath := filepath.Join(repoPath, "credentials/client_secret.json")
+	tokenPath := filepath.Join(repoPath, "credentials/token.json")
 
 	secretFile, err := os.Open(secretPath)
 	if err != nil {

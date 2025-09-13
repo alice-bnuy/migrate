@@ -6,13 +6,6 @@
 .env
 .venv
 
-# OAuth tokens (sensitive data)
-token.json
-*.token.json
-
-# Google OAuth credentials
-client_secret_*.json
-
 # Binaries folder
 bin/
 
@@ -21,6 +14,9 @@ logs/
 
 # Vendor folder
 vendor/
+
+# Credential folder
+credentials/
 
 # Hot reload temporary files (Air)
 tmp/
