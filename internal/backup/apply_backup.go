@@ -17,8 +17,8 @@ func ApplyBackup(backupFile string) error {
 	if err != nil {
 		return fmt.Errorf("could not get user home: %w", err)
 	}
-	assetsDir := filepath.Join(home, "setup", "assets")
-	tmpDir := filepath.Join(assetsDir, "tmp")
+	backupsDir := filepath.Join(home, "setup", "backups")
+	tmpDir := filepath.Join(backupsDir, "tmp")
 
 	// Clean up tmpDir if it exists
 	os.RemoveAll(tmpDir)

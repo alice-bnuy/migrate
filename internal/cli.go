@@ -10,9 +10,9 @@ import (
 )
 
 // RunCLI executes the command line logic for backup, restore, and authentication.
-// Usage: setup create        -> creates backup in assets/files
+// Usage: setup create        -> creates backup in backups
 //
-//		setup apply         -> applies backup from assets/files to the OS
+//		setup apply         -> applies backup from backups to the OS
 //		setup refresh_token -> obtém refresh token do Google OAuth
 //		setup oauth_token   -> gera token OAuth completo a partir do refresh token
 //	 setup --help / -h  -> mostra ajuda
@@ -87,7 +87,7 @@ func promptForCommand() string {
 
 func printHelp() {
 	fmt.Println("Usage:")
-	fmt.Println("  setup create         # Create a backup of system files in assets/files")
+	fmt.Println("  setup create         # Create a backup of system files in backups")
 	fmt.Println("  setup apply <file>   # Apply backup from the specified backup file to the system")
 	fmt.Println("  setup refresh_token  # Obtain Google OAuth refresh token")
 	fmt.Println("  setup oauth_token    # Generate complete OAuth token from refresh token")

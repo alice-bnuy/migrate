@@ -19,14 +19,12 @@ func CreateBackup() error {
 	if err != nil {
 		return fmt.Errorf("could not get user home dir: %w", err)
 	}
-	assetsDir := filepath.Join(home, "setup", "assets")
-	tmpDir := filepath.Join(assetsDir, "tmp")
+	backupsDir := filepath.Join(home, "setup", "backups")
+	tmpDir := filepath.Join(backupsDir, "tmp")
 
 	// Clean up tmpDir if it exists
 	_ = os.RemoveAll(tmpDir)
-	if err := os.MkdirAll(tmpDir, 0755); err != nil {
-		return fmt.Errorf("could not create tmp dir: %w", err)
-	}
+	archivePath := filepath.Join(backupsDir, archiveName)
 
 	// Copy all files/folders to tmpDir (reusing CopyAllToFiles logic, but targeting tmpDir)
 	if err := CopyAllToTarget(tmpDir); err != nil {
