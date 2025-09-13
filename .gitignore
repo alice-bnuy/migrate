@@ -6,6 +6,13 @@
 .env
 .venv
 
+# OAuth tokens (sensitive data)
+token.json
+*.token.json
+
+# Google OAuth credentials
+client_secret_*.json
+
 # Binaries folder
 bin/
 

@@ -4,14 +4,17 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"setup/internal/auth"
 	"setup/internal/backup"
 	"strings"
 )
 
-// RunCLI executes the command line logic for backup and restore.
-// Usage: setup create   -> creates backup in assets/files
+// RunCLI executes the command line logic for backup, restore, and authentication.
+// Usage: setup create        -> creates backup in assets/files
 //
-//	setup apply    -> applies backup from assets/files to the OS
+//	setup apply         -> applies backup from assets/files to the OS
+//	setup refresh_token -> obtém refresh token do Google OAuth
+//	setup oauth_token   -> gera token OAuth completo a partir do refresh token
 func RunCLI() int {
 	var cmd string
 
@@ -37,6 +40,18 @@ func RunCLI() int {
 		}
 		fmt.Println("Backup successfully applied to the system.")
 		return 0
+	case "refresh_token":
+		if err := auth.RunRefreshTokenFlow(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error obtaining refresh token: %v\n", err)
+			return 1
+		}
+		return 0
+	case "oauth_token":
+		if err := auth.RunOAuthTokenFlow(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error generating OAuth token: %v\n", err)
+			return 1
+		}
+		return 0
 	default:
 		printHelp()
 		return 1
@@ -46,10 +61,10 @@ func RunCLI() int {
 func promptForCommand() string {
 	reader := bufio.NewReader(os.Stdin)
 	for {
-		fmt.Print("Enter desired command (create/apply): ")
+		fmt.Print("Enter desired command (create/apply/refresh_token/oauth_token): ")
 		input, _ := reader.ReadString('\n')
 		input = strings.TrimSpace(strings.ToLower(input))
-		if input == "create" || input == "apply" {
+		if input == "create" || input == "apply" || input == "refresh_token" || input == "oauth_token" {
 			return input
 		}
 		fmt.Println("Invalid command.")
@@ -58,6 +73,8 @@ func promptForCommand() string {
 
 func printHelp() {
 	fmt.Println("Usage:")
-	fmt.Println("  setup create   # Create a backup of system files in assets/files")
-	fmt.Println("  setup apply    # Apply backup from assets/files to the system")
+	fmt.Println("  setup create        # Create a backup of system files in assets/files")
+	fmt.Println("  setup apply         # Apply backup from assets/files to the system")
+	fmt.Println("  setup refresh_token # Obtain Google OAuth refresh token")
+	fmt.Println("  setup oauth_token   # Generate complete OAuth token from refresh token")
 }
