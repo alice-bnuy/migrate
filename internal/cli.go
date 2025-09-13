@@ -12,17 +12,25 @@ import (
 // RunCLI executes the command line logic for backup, restore, and authentication.
 // Usage: setup create        -> creates backup in assets/files
 //
-//	setup apply         -> applies backup from assets/files to the OS
-//	setup refresh_token -> obtém refresh token do Google OAuth
-//	setup oauth_token   -> gera token OAuth completo a partir do refresh token
+//		setup apply         -> applies backup from assets/files to the OS
+//		setup refresh_token -> obtém refresh token do Google OAuth
+//		setup oauth_token   -> gera token OAuth completo a partir do refresh token
+//	 setup --help / -h  -> mostra ajuda
 func RunCLI() int {
 	var cmd string
 
 	if len(os.Args) < 2 {
 		fmt.Println("No command provided.")
-		cmd = promptForCommand()
+		printHelp()
+		return 1
 	} else {
 		cmd = strings.ToLower(os.Args[1])
+	}
+
+	// Suporte para --help e -h
+	if cmd == "--help" || cmd == "-h" {
+		printHelp()
+		return 0
 	}
 
 	switch cmd {
@@ -73,8 +81,9 @@ func promptForCommand() string {
 
 func printHelp() {
 	fmt.Println("Usage:")
-	fmt.Println("  setup create        # Create a backup of system files in assets/files")
-	fmt.Println("  setup apply         # Apply backup from assets/files to the system")
-	fmt.Println("  setup refresh_token # Obtain Google OAuth refresh token")
-	fmt.Println("  setup oauth_token   # Generate complete OAuth token from refresh token")
+	fmt.Println("  setup create         # Create a backup of system files in assets/files")
+	fmt.Println("  setup apply          # Apply backup from assets/files to the system")
+	fmt.Println("  setup refresh_token  # Obtain Google OAuth refresh token")
+	fmt.Println("  setup oauth_token    # Generate complete OAuth token from refresh token")
+	fmt.Println("  setup --help, -h     # Show this help message")
 }
